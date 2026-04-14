@@ -1,3 +1,4 @@
+// start //
 console.log("App is working");
 
 // global resets or starting points //
