@@ -7,8 +7,7 @@ let lastWeatherData = null;
 let currentCity = "";
 
 // Private AccuWeather API Key // Replace with "YOUR_API_KEY" for Github //
-// const API_KEY = "YOUR_API_KEY";
-const API_KEY = "zpka_02429ca4d5034d448049446498632f6c_3f7104b2";
+const API_KEY = "YOUR_API_KEY";
 
 
 // API_KEY GET to store locationKey //
