@@ -10,15 +10,18 @@
     <h1>Mandi's Weather App 2026</h1>
 
     <div class ="input-group">
-        <input type="text" id="cityInput" placeholder="Enter A City Name">
+        <input type="text" id="cityInput" list="searchedList" placeholder="Enter A City Name">
+        <datalist id="searchedList"></datalist>
         <button id="searchBtn">Search</button>
     </div>
-
+    
     <button id="toggleTemp">°C / °F</button>
     
     <div class ="results">
-        <div id="weatherResult"></div>
-        <div id="errorMessage"></div>
+        <div class="card">       
+            <div id="weatherResult"></div>
+            <div id="errorMessage"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>

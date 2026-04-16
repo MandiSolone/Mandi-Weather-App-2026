@@ -6,6 +6,7 @@ This project fetches real-time weather data using the AccuWeather API and demons
 
 ## Features 
 - Search weather by city name
+- AutoCompleted City Input
 - Fetch location key using AccuWeather API
 - Display current weather data
 - Basic error handling for invalid cities
