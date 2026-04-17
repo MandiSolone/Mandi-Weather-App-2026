@@ -17,6 +17,6 @@ This project fetches real-time weather data using the AccuWeather API and demons
 
 You can run this project locally by cloning it from GitHub.
 
-1. Clone the repository. git clone https://github.com/MandiSolone/Mandi-Weather-App-2026-.git
+1. Clone the repository. git clone https://github.com/MandiSolone/Mandi-Weather-App-2026.git
 2. Make sure you have a valid API key from AccuWeather (developer.accuweather.com). Replace the "YOUR_API_KEY" placeholder in app.js with your actual key from AccuWeather.
 3. Go to the project folder and double-click or open index.html
