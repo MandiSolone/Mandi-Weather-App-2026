@@ -7,7 +7,20 @@ let lastWeatherData = null;
 let currentCity = "";
 
 // Private AccuWeather API Key // Replace with "YOUR_API_KEY" for Github //
-const API_KEY = "YOUR_API_KEY";
+// const API_KEY = "YOUR_API_KEY";
+const API_KEY = "zpka_02429ca4d5034d448049446498632f6c_3f7104b2";
+
+
+// loading spinner //
+const spinner = document.getElementById("spinner");
+// Show spinner
+function showLoading() {
+  spinner.hidden = false;
+}
+// Hide spinner
+function hideLoading() {
+  spinner.hidden = true;
+}
 
 // Button click || enter keyboard event handler to capture city entered //
 // If clicked //
@@ -39,9 +52,11 @@ myInput.addEventListener("keyup", () => {
 });
 
 async function handleSearch() {
-  // clear old UI error message first
-  document.getElementById("errorMessage").textContent = "";
-
+  
+  document.getElementById("errorMessage").textContent = ""; // clear old UI error message first
+  document.getElementById("weatherResult").style.visibility = `hidden`; // clear displayWeather 
+  showLoading(); // show loading 
+  
   try {
     const city = document.getElementById("cityInput").value;
     console.log("City entered:", city);
@@ -62,6 +77,8 @@ async function handleSearch() {
   } catch (error) {
     console.error("Error:", error.message);
     showError(error.message);
+  } finally {
+    hideLoading(); // always runs to turn loading icon off 
   }
 }
 
@@ -94,22 +111,28 @@ async function autoComplete(currentValue) {
 // API_KEY GET to store locationKey //
 // Using City search URL from Accuweather //
 async function getLocationKey(city) {
-  const options = {
-    method: "GET",
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  };
-  const data = await fetch(
-    `https://dataservice.accuweather.com/locations/v1/cities/search?q=${city}`,
-    options,
-  ).then((data) => data.json());
 
-  console.log("Location data:", data);
+  try {
+    const options = {
+      method: "GET",
+      headers: { Authorization: `Bearer ${API_KEY}` },
+    };
+    const data = await fetch(
+      `https://dataservice.accuweather.com/locations/v1/cities/search?q=${city}`,
+      options,
+    ).then((data) => data.json());
 
-  if (!data || data.length === 0) {
-    throw new Error("City not found. Try a different spelling.");
-  }
-  // returns the first/best result of the array of that city name
-  return data[0].Key;
+    console.log("Location data:", data);
+
+    if (!data || data.length === 0) {
+      throw new Error("City not found. Try a different spelling.");
+    }
+    // returns the first/best result of the array of that city name
+    return data[0].Key;
+  } catch (err) {
+    console.error("Location error:", err);
+    throw err; // re-throw so caller can handle it too
+  } 
 }
 
 // Second API call to get weather data using locationKey //
@@ -136,6 +159,7 @@ async function getWeather(locationKey) {
 function displayWeather(city, weather) {
   lastWeatherData = weather;
   document.getElementById("toggleTemp").style.visibility = `visible`;
+  document.getElementById("weatherResult").style.visibility = `visible`;
   const weatherDisplayContainer = document.getElementById("weatherResult");
 
   const condition = weather?.WeatherText ?? "N/A";
