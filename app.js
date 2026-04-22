@@ -46,16 +46,19 @@ async function handleSearch() {
     const city = document.getElementById("cityInput").value;
     console.log("City entered:", city);
 
-    const locationKey = await getLocationKey(city);
-    console.log("Location Key:", locationKey);
+    if (city !== null && city.length > 0) {
+      const locationKey = await getLocationKey(city);
+      console.log("Location Key:", locationKey);
 
-    currentCity = city;
+      currentCity = city;
 
-    const weather = await getWeather(locationKey);
-    console.log("Weather Data:", weather);
+      const weather = await getWeather(locationKey);
+      console.log("Weather Data:", weather);
 
-    displayWeather(currentCity, weather);
-
+      displayWeather(currentCity, weather);
+    } else {
+      showError("City not entered");
+    }
   } catch (error) {
     console.error("Error:", error.message);
     showError(error.message);
@@ -113,7 +116,7 @@ async function getLocationKey(city) {
 async function getWeather(locationKey) {
   const options = {
     method: "GET",
-    headers: { Authorization: `Bearer ${API_KEY}` }
+    headers: { Authorization: `Bearer ${API_KEY}` },
   };
   const data = await fetch(
     `https://dataservice.accuweather.com/currentconditions/v1/${locationKey}?details=true`,
@@ -129,11 +132,10 @@ async function getWeather(locationKey) {
   return data[0];
 }
 
-
 // Display weather results in UI //
 function displayWeather(city, weather) {
   lastWeatherData = weather;
-
+  document.getElementById("toggleTemp").style.visibility = `visible`;
   const weatherDisplayContainer = document.getElementById("weatherResult");
 
   const condition = weather?.WeatherText ?? "N/A";

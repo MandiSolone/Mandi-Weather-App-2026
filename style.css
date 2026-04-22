@@ -47,9 +47,7 @@ button:hover {
   padding: 20px;
   color: white;
   display: inline;
-  border-radius: 10px;
   min-width: 260px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   text-align: center;
 }
 
@@ -62,4 +60,8 @@ button:hover {
   position: absolute;
   top: 100%;
   left: 0;
+}
+
+#toggleTemp {
+  visibility: hidden;
 }
