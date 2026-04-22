@@ -9,7 +9,7 @@ body {
   justify-content: center;
 }
 
-h1 {
+h1, h2 {
   margin-bottom: 20px;
   color: #e5e7eb;
   font-weight: 500;
@@ -31,6 +31,7 @@ input {
 
 button {
   padding: 10px 14px;
+  margin: 5px;
   border: none;
   border-radius: 6px;
   background-color: #4f8cff;
@@ -43,12 +44,40 @@ button:hover {
 }
 
 .results {
-  margin-top: 20px;
-  padding: 20px;
+  margin: 5px;
+  padding: 5px;
   color: white;
   display: inline;
   min-width: 260px;
   text-align: center;
+}
+
+#cityListResults {
+  visibility: hidden;
+  display: inline;
+}
+
+#city-list {
+  margin-top: 20px;
+  padding: 0;
+  color: white;
+  display: inline;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.city-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.city-item:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 #errorMessage {
@@ -62,9 +91,26 @@ button:hover {
   left: 0;
 }
 
+.card {
+  position: relative;
+}
+
 #toggleTemp {
   visibility: hidden;
+  position: absolute;
+  top: 40px;     /* move it down more */
+  right: 0px;   /* keep it to the right */
+  padding: 4px 6px;   /* smaller button */
+  font-size: 12px;    /* smaller text */
+  border-radius: 5px;
 }
+
+#add-city-button {
+  visibility: hidden;
+  display: block;
+  margin: 20px auto;
+}
+
 
 #spinner {
   width: 50px;
