@@ -1,87 +1,51 @@
-// start //
-console.log("App is working");
-
-// global resets or starting points //
+// global variables points //
 let isCelsius = false;
 let lastWeatherData = null;
 let currentCity = "";
+const locationKeyCache = {};
+console.log("locationKeyCache:", locationKeyCache);
 
 // Private AccuWeather API Key // Replace with "YOUR_API_KEY" for Github //
-// const API_KEY = "YOUR_API_KEY";
-const API_KEY = "zpka_02429ca4d5034d448049446498632f6c_3f7104b2";
+const API_KEY = "YOUR_API_KEY";
 
-
-// loading spinner //
+// Loading Spinner Icon //
 const spinner = document.getElementById("spinner");
-// Show spinner
+
 function showLoading() {
   spinner.hidden = false;
 }
-// Hide spinner
+
 function hideLoading() {
   spinner.hidden = true;
 }
 
-// Button click || enter keyboard event handler to capture city entered //
-// If clicked //
-const button = document.getElementById("searchBtn");
-button.addEventListener("click", handleSearch);
-
-// enter button //
-const input = document.getElementById("cityInput");
-input.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    handleSearch();
-  }
-});
-
-// Searchbar Typing Event Listener //
+// Searchbar Keyup Event Listener used with autoComplete() function below to add dropdown options //
+// Only calls autoComplete function if value has changes, is > 3 characters, more then 300ms //
 const myInput = document.getElementById("cityInput");
-let lastValue = myInput.value;
+
+let debounceTimer;
+const MIN_CHARS = 3;
+const DELAY = 300; // ms
+let lastValue = "";
 
 myInput.addEventListener("keyup", () => {
   const currentValue = myInput.value;
   console.log("keyup currentValue:", currentValue);
 
-  // If current value changes, call the function
-  if (currentValue !== null && currentValue !== lastValue) {
-    autoComplete(currentValue);
-    // Update lastValue so the function doesn't run again until another change
-    lastValue = currentValue;
+  // Must have at least 4 chars and must change
+  if (currentValue.length > MIN_CHARS && currentValue !== lastValue) {
+    // window method to clear previous timer
+    // window method setTimeout to only run if enough characters and the value changes
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+      autoComplete(currentValue);
+      lastValue = currentValue;
+    }, DELAY);
   }
 });
 
-async function handleSearch() {
-  
-  document.getElementById("errorMessage").textContent = ""; // clear old UI error message first
-  document.getElementById("weatherResult").style.visibility = `hidden`; // clear displayWeather 
-  showLoading(); // show loading 
-  
-  try {
-    const city = document.getElementById("cityInput").value;
-    console.log("City entered:", city);
-
-    if (city !== null && city.length > 0) {
-      const locationKey = await getLocationKey(city);
-      console.log("Location Key:", locationKey);
-
-      currentCity = city;
-
-      const weather = await getWeather(locationKey);
-      console.log("Weather Data:", weather);
-
-      displayWeather(currentCity, weather);
-    } else {
-      showError("City not entered");
-    }
-  } catch (error) {
-    console.error("Error:", error.message);
-    showError(error.message);
-  } finally {
-    hideLoading(); // always runs to turn loading icon off 
-  }
-}
-
+// API CALL to Accuweather to Auto Populate Location Options In Drop Down List //
 async function autoComplete(currentValue) {
   const options = {
     method: "GET",
@@ -108,11 +72,78 @@ async function autoComplete(currentValue) {
   return data;
 }
 
-// API_KEY GET to store locationKey //
-// Using City search URL from Accuweather //
-async function getLocationKey(city) {
+// Button Click || Enter Keyboard Event Handler To Capture City Entered //
+// If Clicked //
+const button = document.getElementById("searchBtn");
+button.addEventListener("click", handleSearch);
+
+// If Enter Button //
+const input = document.getElementById("cityInput");
+input.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    handleSearch();
+  }
+});
+
+// Main Function To Handle City Input in Search Bar, Order Of Operations Of Other Functions Called//
+async function handleSearch() {
+  showLoading(); // show loading icon
+  // clear old UI elements //
+  document.getElementById("toggleTemp").style.visibility = `hidden`;
+  document.getElementById("weatherResult").style.visibility = `hidden`;
+  document.getElementById("add-city-button").style.visibility = `hidden`;
+  document.getElementById("errorMessage").textContent = "";
 
   try {
+    const city = document.getElementById("cityInput").value;
+    console.log("City entered:", city);
+
+    if (city !== null && city.length > 0) {
+      const locationKey = await getLocationKey(city);
+      console.log("Location Key:", locationKey);
+
+      const weather = await getWeather(locationKey);
+      console.log("Weather Data:", weather);
+
+      const currentCity = await formatCity(city);
+      console.log("currentCity Key:", currentCity);
+
+      displayWeather(currentCity, weather);
+    } else {
+      showError("City not entered");
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    showError(error.message);
+  } finally {
+    hideLoading(); // always runs to turn loading icon off
+    document.getElementById("searchedList").innerHTML = ""; // clear autocomplete dropdown list
+    document.getElementById("cityInput").value = ""; // clear search bar text
+  }
+}
+
+// Function to get var with stored session data locationKeyCache //
+// or localStorage property, so even if page is refreshed //
+// or the API, using City search URL from Accuweather //
+async function getLocationKey(city) {
+  const key = city.trim().toLowerCase();
+  console.log("locationKeyCache:", locationKeyCache);
+
+  // Check cache before calling the api //
+  if (locationKeyCache[key]) {
+    console.log("Using cached location key");
+    return locationKeyCache[key];
+  }
+  // Check localStorage // should stay even on a refresh //
+  const stored = localStorage.getItem(key);
+  console.log("stored", stored);
+  if (stored) {
+    locationKeyCache[key] = stored;
+    console.log("Using localStorage stored key");
+    return stored;
+  }
+  try {
+    console.log("Using API to get location key");
     const options = {
       method: "GET",
       headers: { Authorization: `Bearer ${API_KEY}` },
@@ -127,15 +158,21 @@ async function getLocationKey(city) {
     if (!data || data.length === 0) {
       throw new Error("City not found. Try a different spelling.");
     }
-    // returns the first/best result of the array of that city name
-    return data[0].Key;
+    // Returns the first/best result of the index for city //
+    const locationKey = data[0].Key;
+
+    // Save in both caches
+    locationKeyCache[key] = locationKey;
+    localStorage.setItem(key, locationKey);
+
+    return locationKey;
   } catch (err) {
     console.error("Location error:", err);
     throw err; // re-throw so caller can handle it too
-  } 
+  }
 }
 
-// Second API call to get weather data using locationKey //
+// Third API call to get weather data using locationKey //
 async function getWeather(locationKey) {
   const options = {
     method: "GET",
@@ -155,24 +192,34 @@ async function getWeather(locationKey) {
   return data[0];
 }
 
+// Uppercase city entered for cleaner view in UI //
+function formatCity(city) {
+  return city
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 // Display weather results in UI //
 function displayWeather(city, weather) {
-  lastWeatherData = weather;
-  document.getElementById("toggleTemp").style.visibility = `visible`;
-  document.getElementById("weatherResult").style.visibility = `visible`;
   const weatherDisplayContainer = document.getElementById("weatherResult");
+  lastWeatherData = weather;
+  document.getElementById("add-city-button").style.visibility = `visible`;
+  document.getElementById("weatherResult").style.visibility = `visible`;
+  document.getElementById("toggleTemp").style.visibility = `visible`;
 
   const condition = weather?.WeatherText ?? "N/A";
   const humidity = weather?.RelativeHumidity ?? "N/A";
   const wind = weather?.Wind?.Speed?.Imperial?.Value ?? "N/A";
-  const tempF = weather?.Temperature?.Imperial?.Value ?? "N/A";
-  const tempC = weather?.Temperature?.Metric?.Value ?? "N/A";
+  const tempF = lastWeatherData.Temperature?.Imperial?.Value ?? "N/A";
+  const tempC = lastWeatherData.Temperature?.Metric?.Value ?? "N/A";
   const temp = isCelsius ? `${tempC}°C` : `${tempF}°F`;
-  const weatherIconId = weather?.WeatherIcon;
+  const weatherIconId = weather?.WeatherIcon ?? "";
 
   weatherDisplayContainer.innerHTML = `
   <h2>${city}</h2>
-  <p>Temperature: ${temp}</p>
+  <p>Temperature: <span id="tempValue">${temp}</span></p> 
   <p>Condition: ${condition}</p>
   <p>Humidity: ${humidity}</p>
   <p>Wind Speed: ${wind}</p>
@@ -180,13 +227,87 @@ function displayWeather(city, weather) {
   `;
 }
 
-// Toggle Button °C / °F //
+// Toggle with less rerendering //
 document.getElementById("toggleTemp").addEventListener("click", () => {
   isCelsius = !isCelsius;
-  console.log("isCelsius:", isCelsius);
+  updateTemperature();
+});
 
-  if (lastWeatherData) {
-    displayWeather(currentCity, lastWeatherData);
+// Function just for updating temp //
+function updateTemperature() {
+  const tempEl = document.getElementById("tempValue");
+  if (!tempEl || !lastWeatherData) return;
+
+  const tempF = lastWeatherData.Temperature?.Imperial?.Value;
+  const tempC = lastWeatherData.Temperature?.Metric?.Value;
+
+  tempEl.textContent = isCelsius ? `${tempC}°C` : `${tempF}°F`;
+}
+
+// Add Saved Cities //
+const recentCities = new Set(); // use Set for methods //
+const MAX_CITIES = 5;
+
+// Handle the click //
+document.getElementById("add-city-button").addEventListener("click", () => {
+  const container = document.getElementById("weatherResult");
+  const city = container.querySelector("h2").textContent;
+  const addedCity = formatCity(city);
+  console.log("addedCity :", addedCity);
+  document.getElementById("cityListResults").style.visibility = `visible`;
+
+  if (!addedCity) return;
+
+  savedCity(addedCity);
+});
+
+function savedCity(addedCity) {
+  if (addedCity) {
+    // Manage the set (adds new, moves existing to end)
+    if (recentCities.has(addedCity)) {
+      recentCities.delete(addedCity);
+    }
+    recentCities.add(addedCity);
+
+    // Limit list size (keep last 5)
+    if (recentCities.size > MAX_CITIES) {
+      const firstCity = recentCities.values().next().value;
+      recentCities.delete(firstCity);
+    }
+    console.log("recentCities", recentCities);
+
+    renderList();
+  }
+
+  function renderList() {
+    const listContainer = document.getElementById("city-list");
+    listContainer.innerHTML = "";
+
+    // Transforms Set into Array to access Reverse functionality
+    Array.from(recentCities).reverse().forEach((addedCity) => {
+      const div = document.createElement("div");
+      div.className = "city-item";
+      div.textContent = addedCity;
+
+      // Append the element, not the string
+      listContainer.append(div);
+    });
+  }
+}
+
+// Handle clicking on saved cities //
+// Add listener listcontainer and capture event to target that specific city //
+document.getElementById("city-list").addEventListener("click", (e) => {
+  if (e.target.classList.contains("city-item")) {
+    const city = e.target.textContent;
+    console.log("Clicked saved city:", city);
+
+    // Populate into the search bar input at the top //
+    const input = document.getElementById("cityInput");
+    input.value = city;
+
+    // Call handleSearch
+    handleSearch();
   }
 });
 
